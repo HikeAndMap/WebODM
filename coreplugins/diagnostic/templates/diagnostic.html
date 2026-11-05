@@ -26,7 +26,33 @@
             <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> {{ total_memory|filesizeformat }}</p>
         {% endif %}
     </div>
+    <div class="col-md-4 col-sm-12">
+        {% if total_memory %}
+        <h4>{% trans 'Swap (virtual memory)' %}</h4>
+        {% if swap_total %}
+        <div style="width: 80%; margin-left: 10%;">
+            <canvas id="swapChart" width="200" height="200" style="margin-bottom: 12px;"></canvas>
+        </div>
+        <p><b>{% trans 'Free' context 'Megabytes of memory space' %}:</b> {{ swap_free|filesizeformat }} |
+            <b>{% trans 'Used' context 'Megabytes of memory space' %}:</b> {{ swap_used|filesizeformat }} |
+            <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> {{ swap_total|filesizeformat }}</p>
+        {% else %}
+        <p style="margin-top: 40px;">{% trans 'No swap: a processing node can use the RAM only.' %}</p>
+        {% endif %}
+        {% endif %}
+    </div>
 </div>
+
+{% if total_memory %}
+<div class="row text-center">
+    <div class="col-sm-12">
+        <p style="margin-top: 8px;"><b>{% trans 'Memory and swap together' %}:</b>
+            <b>{% trans 'Free' context 'Megabytes of memory space' %}:</b> {{ all_free|filesizeformat }} |
+            <b>{% trans 'Used' context 'Megabytes of memory space' %}:</b> {{ all_used|filesizeformat }} |
+            <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> {{ all_total|filesizeformat }}</p>
+    </div>
+</div>
+{% endif %}
 
 <hr/>
 
@@ -85,6 +111,42 @@
                     "rgb(54, 162, 235)"
                 ],
                 data: [ {{ used_memory }}, {{ free_memory }} ],
+            }]
+        },
+        options: {
+            legend:{
+                reverse: true
+            },
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        return labels[data.labels[tooltipItem.index]];
+                    }
+                }
+            }
+        }
+    });
+})();
+{% endif %}
+
+{% if swap_total %}
+(function(){
+    var ctx = document.getElementById('swapChart').getContext('2d');
+    var labels = {
+        "{% trans 'Used' context 'Megabytes of memory space' %}": '{{ swap_used|filesizeformat }}',
+        "{% trans 'Free' context 'Megabytes of memory space' %}": '{{ swap_free|filesizeformat }}'
+    };
+    var chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ["{% trans 'Used' context 'Megabytes of memory space' %}", "{% trans 'Free' context 'Megabytes of memory space' %}"],
+            datasets: [{
+                label: "{% trans 'Swap (virtual memory)' %}",
+                backgroundColor:[
+                    "rgb(255, 99, 132)",
+                    "rgb(54, 162, 235)"
+                ],
+                data: [ {{ swap_used }}, {{ swap_free }} ],
             }]
         },
         options: {

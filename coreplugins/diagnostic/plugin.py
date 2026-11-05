@@ -34,11 +34,17 @@ def get_memory_stats():
 
             total = int(mem_status.ullTotalPhys)
             free = int(mem_status.ullAvailPhys)
+            # The page file is RAM + page file on Windows; what is beyond the RAM is the "swap"
+            swap_total = max(0, int(mem_status.ullTotalPageFile) - total)
+            swap_free = max(0, int(mem_status.ullAvailPageFile) - free)
 
             return {
                 'total': total,
                 'free': free,
                 'used': total - free,
+                'swap_total': swap_total,
+                'swap_free': swap_free,
+                'swap_used': swap_total - swap_free,
             }
 
         with open('/proc/meminfo', 'r') as mem:
@@ -50,12 +56,18 @@ def get_memory_stats():
                     ret['total'] = int(sline[1])
                 elif str(sline[0]) in ('MemFree:', 'Buffers:', 'Cached:'):
                     tmp += int(sline[1])
+                elif str(sline[0]) == 'SwapTotal:':
+                    ret['swap_total'] = int(sline[1])
+                elif str(sline[0]) == 'SwapFree:':
+                    ret['swap_free'] = int(sline[1])
             ret['free'] = tmp
             ret['used'] = int(ret['total']) - int(ret['free'])
+            ret.setdefault('swap_total', 0)
+            ret.setdefault('swap_free', 0)
+            ret['swap_used'] = ret['swap_total'] - ret['swap_free']
 
-            ret['total'] *= 1024
-            ret['free'] *= 1024
-            ret['used'] *= 1024
+            for key in ('total', 'free', 'used', 'swap_total', 'swap_free', 'swap_used'):
+                ret[key] *= 1024
         return ret
     except:
         return {}
@@ -84,6 +96,13 @@ class Plugin(PluginBase):
                 template_args['free_memory'] = memory_stats['free']
                 template_args['used_memory'] = memory_stats['used']
                 template_args['total_memory'] = memory_stats['total']
+                # Swap (virtual memory on disk), and RAM + swap together: what a processing node can use at most
+                template_args['swap_total'] = memory_stats.get('swap_total', 0)
+                template_args['swap_free'] = memory_stats.get('swap_free', 0)
+                template_args['swap_used'] = memory_stats.get('swap_used', 0)
+                template_args['all_total'] = memory_stats['total'] + template_args['swap_total']
+                template_args['all_free'] = memory_stats['free'] + template_args['swap_free']
+                template_args['all_used'] = memory_stats['used'] + template_args['swap_used']
 
             return render(request, self.template_path("diagnostic.html"), template_args)
 
