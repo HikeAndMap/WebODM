@@ -182,6 +182,8 @@ const OPTION_GROUP_MAP = {
     
     'force-gps': { group: 'sfm', subgroup: 'gps' },
     'gps-accuracy': { group: 'sfm', subgroup: 'gps' },
+    // HikeAndMap/ODX [PATCH6]: the vertical accuracy of the photos without RTK
+    'gps-accuracy-vertical': { group: 'sfm', subgroup: 'gps' },
     'gps-z-offset': { group: 'sfm', subgroup: 'gps' },
     'use-exif': { group: 'sfm', subgroup: 'gps' },
     
