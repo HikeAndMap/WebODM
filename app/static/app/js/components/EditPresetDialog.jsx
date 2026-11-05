@@ -238,6 +238,8 @@ const OPTION_GROUP_MAP = {
     'orthophoto-cutline': { group: 'orthophoto', subgroup: 'ortho-opts' },
     'skip-orthophoto': { group: 'orthophoto', subgroup: 'ortho-opts' },
     'use-3dmesh': { group: 'orthophoto', subgroup: 'ortho-opts' },
+    // HikeAndMap/ODX [PATCH4]: the square round each GCP that the orthophoto takes from one photo the GCP is marked in
+    'gcp-texture-size': { group: 'orthophoto', subgroup: 'ortho-opts' },
     
     // Tile Exports
     '3d-tiles': { group: 'tiles', subgroup: 'tiles-opts' },
