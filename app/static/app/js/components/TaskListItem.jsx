@@ -483,6 +483,17 @@ class TaskListItem extends React.Component {
     this.setState({thumbLoadFailed: true});
   }
 
+  // HikeAndMap: the memory a run took, in GiB like the node's limits (docker run --memory 190g)
+  memoryToHuman = (memory) => {
+    const gib = bytes => (bytes / Math.pow(1024, 3)).toFixed(1) + " GiB";
+    const of = limit => limit ? " " + interpolate(_("of %(limit)s"), { limit: gib(limit) }) : "";
+    let text = interpolate(_("%(total)s RAM + swap together"), { total: gib(memory.peak_total) });
+    if (memory.peak_stage) text += " " + interpolate(_("(in the %(stage)s stage)"), { stage: memory.peak_stage });
+    text += "; " + interpolate(_("RAM up to %(ram)s"), { ram: gib(memory.peak_ram || 0) }) + of(memory.ram_limit);
+    text += ", " + interpolate(_("swap up to %(swap)s"), { swap: gib(memory.peak_swap || 0) }) + of(memory.swap_limit);
+    return text;
+  }
+
   spatialRefsToHuman = (refs) => {
     if (refs.indexOf("alignment") !== -1) return _("Alignment");
 
@@ -714,6 +725,11 @@ class TaskListItem extends React.Component {
                     <tr>
                       <td><strong>{_("Georeferencing:")}</strong></td>
                       <td>{this.spatialRefsToHuman(stats.spatial_refs)}</td>
+                    </tr> : null}
+                    {stats && stats.memory && stats.memory.peak_total ?
+                    <tr>
+                      <td><strong>{_("Peak Memory:")}</strong></td>
+                      <td>{this.memoryToHuman(stats.memory)}</td>
                     </tr> : null}
                     {task.srs && task.srs.name ?
                     <tr>

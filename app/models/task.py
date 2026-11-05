@@ -464,6 +464,19 @@ class Task(models.Model):
             if 'align' in j:
                 spatial_refs.append("alignment")
 
+            # HikeAndMap: the memory the run took ([PATCH5] of HikeAndMap/ODX writes it; older runs have none)
+            memory = None
+            m = j.get('memory_statistics')
+            if isinstance(m, dict) and m.get('peak_total_bytes'):
+                memory = {
+                    'peak_total': m.get('peak_total_bytes'),
+                    'peak_stage': m.get('peak_total_stage'),
+                    'peak_ram': m.get('peak_ram_bytes'),
+                    'peak_swap': m.get('peak_swap_bytes'),
+                    'ram_limit': m.get('ram_limit_bytes'),
+                    'swap_limit': m.get('swap_limit_bytes'),
+                }
+
             return {
                 'pointcloud':{
                     'points': points,
@@ -473,6 +486,7 @@ class Task(models.Model):
                 'start_date': j.get('processing_statistics', {}).get('start_date'),
                 'end_date': j.get('processing_statistics', {}).get('end_date'),
                 'spatial_refs': spatial_refs,
+                'memory': memory,
             }
         else:
             return {}
