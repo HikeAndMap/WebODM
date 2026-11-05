@@ -6,7 +6,7 @@
 <h2>{% trans 'Diagnostic Information' %}</h2>
 
 <div class="row text-center">
-    <div class="col-md-4 col-sm-12">
+    <div class="col-md-3 col-sm-12">
         <h4>{% trans 'Storage Space' %}</h4>
         <div style="width: 80%; margin-left: 10%;">
             <canvas id="diskChart" width="200" height="200" style="margin-bottom: 12px;"></canvas>
@@ -15,7 +15,7 @@
             <b>{% trans 'Used' context 'Megabytes of storage space' %}:</b> {{ used_disk_space|filesizeformat }} |
             <b>{% trans 'Total' context 'Megabytes of storage space' %}:</b> {{ total_disk_space|filesizeformat }}</p>
     </div>
-    <div class="col-md-4 col-sm-12">
+    <div class="col-md-3 col-sm-12">
         {% if total_memory %}
         <h4>{% trans 'Memory' context 'Computer memory (RAM)' %}</h4>
         <div style="width: 80%; margin-left: 10%;">
@@ -26,7 +26,7 @@
             <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> {{ total_memory|filesizeformat }}</p>
         {% endif %}
     </div>
-    <div class="col-md-4 col-sm-12">
+    <div class="col-md-3 col-sm-12">
         {% if total_memory %}
         <h4>{% trans 'Swap (virtual memory)' %}</h4>
         {% if swap_total %}
@@ -39,6 +39,19 @@
         {% else %}
         <p style="margin-top: 40px;">{% trans 'No swap: a processing node can use the RAM only.' %}</p>
         {% endif %}
+        {% endif %}
+    </div>
+    <div class="col-md-3 col-sm-12">
+        {% if cpu %}
+        <h4>{% trans 'CPU' %}</h4>
+        <div style="width: 80%; margin-left: 10%;">
+            <canvas id="cpuChart" width="200" height="200" style="margin-bottom: 12px;"></canvas>
+        </div>
+        <p><b>{% trans 'Busy' %}:</b> {{ cpu.busy_cores }} {% trans 'of' %} {{ cpu.cores }} {% trans 'cores' %} ({{ cpu.busy_percent }} % {% trans 'of' %} {{ cpu.all_percent }} %) |
+            <b>{% trans 'Waiting for the disk' %}:</b> {{ cpu.iowait_cores }} |
+            <b>{% trans 'Idle' %}:</b> {{ cpu.idle_cores }}</p>
+        {% if cpu.load %}<p><b>{% trans 'Load average' %}:</b> {{ cpu.load.0 }} (1 min) | {{ cpu.load.1 }} (5 min) | {{ cpu.load.2 }} (15 min)</p>{% endif %}
+        <p style="font-size: 90%; opacity: 0.8;">{% trans 'Measured over half a second when the page was opened; reload the page for a new reading.' %}</p>
         {% endif %}
     </div>
 </div>
@@ -111,6 +124,44 @@
                     "rgb(54, 162, 235)"
                 ],
                 data: [ {{ used_memory }}, {{ free_memory }} ],
+            }]
+        },
+        options: {
+            legend:{
+                reverse: true
+            },
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        return labels[data.labels[tooltipItem.index]];
+                    }
+                }
+            }
+        }
+    });
+})();
+{% endif %}
+
+{% if cpu %}
+(function(){
+    var ctx = document.getElementById('cpuChart').getContext('2d');
+    var labels = {
+        "{% trans 'Busy' %}": '{{ cpu.busy_cores }} {% trans "cores" %}',
+        "{% trans 'Waiting for the disk' %}": '{{ cpu.iowait_cores }} {% trans "cores" %}',
+        "{% trans 'Idle' %}": '{{ cpu.idle_cores }} {% trans "cores" %}'
+    };
+    var chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ["{% trans 'Busy' %}", "{% trans 'Waiting for the disk' %}", "{% trans 'Idle' %}"],
+            datasets: [{
+                label: "{% trans 'CPU' %}",
+                backgroundColor:[
+                    "rgb(255, 99, 132)",
+                    "rgb(255, 159, 64)",
+                    "rgb(54, 162, 235)"
+                ],
+                data: [ {{ cpu.busy_cores }}, {{ cpu.iowait_cores }}, {{ cpu.idle_cores }} ],
             }]
         },
         options: {

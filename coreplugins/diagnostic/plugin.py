@@ -6,6 +6,7 @@ from django.utils.translation import gettext as _
 import json, shutil
 import ctypes
 import sys
+import time
 
 def get_memory_stats():
     """
@@ -73,6 +74,52 @@ def get_memory_stats():
         return {}
 
 
+def _cpu_times():
+    """The first line of /proc/stat (all cores together) and the number of cores, or None."""
+    with open('/proc/stat', 'r') as f:
+        lines = f.read().splitlines()
+    fields = [int(v) for v in lines[0].split()[1:]]
+    cores = sum(1 for l in lines if l.startswith('cpu') and l[3:4].isdigit())
+    # user nice system idle iowait irq softirq steal (guest time is already in user/nice)
+    fields = (fields + [0] * 8)[:8]
+    return fields, cores
+
+
+def get_cpu_stats(interval=0.5):
+    """
+    HikeAndMap: how busy the processors are, measured over a short interval: busy cores, cores waiting for the disk
+    (a sign of swapping) and idle cores, with 100 % per core; and the load average. The container sees the whole server here.
+    """
+    try:
+        if sys.platform == 'win32':
+            return {}
+        first, cores = _cpu_times()
+        time.sleep(interval)
+        second, _ = _cpu_times()
+        delta = [b - a for a, b in zip(first, second)]
+        total = sum(delta)
+        if total <= 0 or cores <= 0:
+            return {}
+        idle, iowait = delta[3], delta[4]
+        busy = total - idle - iowait
+        ret = {
+            'cores': cores,
+            'busy_cores': round(busy / total * cores, 1),
+            'iowait_cores': round(iowait / total * cores, 1),
+            'idle_cores': round(idle / total * cores, 1),
+            'busy_percent': int(round(busy / total * cores * 100)),
+            'all_percent': cores * 100,
+        }
+        try:
+            with open('/proc/loadavg', 'r') as f:
+                ret['load'] = [float(v) for v in f.read().split()[:3]]
+        except Exception:
+            pass
+        return ret
+    except Exception:
+        return {}
+
+
 class Plugin(PluginBase):
     def main_menu(self):
         return [Menu(_("Diagnostic"), self.public_url(""), "fa fa-chart-pie fa-fw")]
@@ -103,6 +150,11 @@ class Plugin(PluginBase):
                 template_args['all_total'] = memory_stats['total'] + template_args['swap_total']
                 template_args['all_free'] = memory_stats['free'] + template_args['swap_free']
                 template_args['all_used'] = memory_stats['used'] + template_args['swap_used']
+
+            # Processors (HikeAndMap)
+            cpu_stats = get_cpu_stats()
+            if 'cores' in cpu_stats:
+                template_args['cpu'] = cpu_stats
 
             return render(request, self.template_path("diagnostic.html"), template_args)
 
