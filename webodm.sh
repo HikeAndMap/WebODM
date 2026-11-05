@@ -182,8 +182,8 @@ usage(){
   echo "	start [options]		Start WebODM"
   echo "	stop			Stop WebODM"
   echo "	down			Stop and remove WebODM's docker containers"
-  echo "	update			Update WebODM to the latest release"
-  echo "	liveupdate		Update WebODM to the latest release without stopping it"
+  echo "	update			Take the newest code of this repository (origin master) and build the images from it; WebODM keeps running, restart it afterwards"
+  echo "	liveupdate		Not used here (it would download the stock images); use update"
   echo "	rebuild			Rebuild all docker containers and perform cleanups"
   echo "	checkenv		Do an environment check and install missing components"
   echo "	test [frontend|backend] [args]	Run tests (all tests, or just frontend/backend with optional arguments)"
@@ -589,39 +589,31 @@ resetpassword(){
 	fi
 }
 
+# HikeAndMap: WebODM runs images built here from this repository (docker-compose.build.yml), not the stock images
+# from Docker Hub. "update" therefore never pulls images: it takes the newest code and submodules of origin master and
+# builds the images from them. WebODM keeps running meanwhile; restart it afterwards with the start script.
 update(){
-	echo "Updating WebODM..."
+	echo "Updating WebODM from $(git remote get-url origin 2>/dev/null)..."
 
 	hash git 2>/dev/null || git_not_found=true
 	if [[ $git_not_found ]]; then
-		echo "Skipping source update (git not found)"
-	else
-		if [[ -d .git ]]; then
-			if [[ -d "locale" ]] && [[ -n "$(ls -A locale)" ]]; then
-				run "git submodule sync"
-			fi
-			run "git pull origin master"
-		else
-			echo "Skipping source update (.git directory not found)"
-		fi
+		echo "Git not found: cannot update."
+		exit 1
+	fi
+	if [[ ! -d .git ]]; then
+		echo "Not a git checkout (.git directory not found): cannot update."
+		exit 1
+	fi
+	if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+		echo "Files of WebODM were changed here (git status shows them). Put the change in the repository instead, or undo it with: git checkout -- <file>"
+		exit 1
 	fi
 
-	command="$docker_compose -f docker-compose.yml"
-
-	if [[ $WO_DEFAULT_NODES -gt 0 ]]; then
-		if [ "${GPU_NVIDIA}" = true ]; then
-			command+=" -f docker-compose.nodeodm.gpu.nvidia.yml"
-		else
-			command+=" -f docker-compose.nodeodm.yml"
-		fi
-	fi
-
-	if [[ $load_micmac_node = true ]]; then
-		command+=" -f docker-compose.nodemicmac.yml"
-	fi
-
-	command+=" pull"
-	run "$command"
+	run "git pull origin master" || { echo "Stopped: \"git pull origin master\" failed."; exit 1; }
+	run "git submodule sync --recursive" || { echo "Stopped: \"git submodule sync --recursive\" failed."; exit 1; }
+	run "git submodule update --init --recursive" || { echo "Stopped: \"git submodule update --init --recursive\" failed."; exit 1; }
+	run "$docker_compose -f docker-compose.yml -f docker-compose.build.yml build" || { echo "Stopped: \"docker compose -f docker-compose.yml -f docker-compose.build.yml build\" failed."; exit 1; }
+	echo "Now built: $(git log -1 --format='%h %cd %s')"
 }
 
 if [[ $1 = "start" ]]; then
@@ -656,13 +648,12 @@ elif [[ $1 = "rebuild" ]]; then
 	rebuild
 elif [[ $1 = "update" ]]; then
 	environment_check
-	down
 	update
-	echo -e "\033[1mDone!\033[0m You can now start WebODM by running $0 start"
+	echo -e "\033[1mDone!\033[0m The new images are built. Back up the database first if you have not, then restart WebODM with your start script (or $0 restart with your options)."
 elif [[ $1 = "liveupdate" ]]; then
-	environment_check
-	update
-	echo -e "\033[1mDone!\033[0m You can now finish the update by running $0 restart"
+	echo "liveupdate is not used here: it would download the stock images from Docker Hub over the images built from this repository."
+	echo "Use $0 update (takes the new code and builds the images), then restart WebODM with your start script."
+	exit 1
 elif [[ $1 = "checkenv" ]]; then
 	environment_check
 elif [[ $1 = "test" ]]; then
