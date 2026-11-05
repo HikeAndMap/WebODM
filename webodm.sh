@@ -31,8 +31,11 @@ fi
 # Load default values
 source "${__dirname}/.env"
 
-# HikeAndMap: build as before (not through "bake"), without Compose's notice about it on every build
+# HikeAndMap: build as before (not through "bake"). Compose 2.35 still prints its hint "Compose can now delegate builds to bake"
+# on every classic build, whatever COMPOSE_BAKE says - it is one of Docker's CLI hints, which DOCKER_CLI_HINTS=false switches off
+# (for the commands this script runs only).
 export COMPOSE_BAKE=${COMPOSE_BAKE:-false}
+export DOCKER_CLI_HINTS=${DOCKER_CLI_HINTS:-false}
 DEFAULT_PORT="$WO_PORT"
 DEFAULT_HOST="$WO_HOST"
 DEFAULT_MEDIA_DIR="$WO_MEDIA_DIR"
