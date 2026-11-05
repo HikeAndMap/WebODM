@@ -1,17 +1,17 @@
 FROM ubuntu:20.04
-MAINTAINER Piero Toffanin <pt@masseranolabs.com>
+LABEL maintainer="Piero Toffanin <pt@masseranolabs.com>"
 
-ENV POSTGRES_PASSWORD postgres
-ENV POSTGRES_HOST_AUTH_METHOD trust
-ENV POSTGRES_ALLOW_HOST all
-ENV GOSU_VERSION 1.12
-ENV PG_MAJOR 9.5
-ENV PG_VERSION 9.5.25
-ENV POSTGIS_VERSION 2.3.2
-ENV PATH $PATH:/usr/local/pgsql/bin
+ENV POSTGRES_PASSWORD=postgres
+ENV POSTGRES_HOST_AUTH_METHOD=trust
+ENV POSTGRES_ALLOW_HOST=all
+ENV GOSU_VERSION=1.12
+ENV PG_MAJOR=9.5
+ENV PG_VERSION=9.5.25
+ENV POSTGIS_VERSION=2.3.2
+ENV PATH=$PATH:/usr/local/pgsql/bin
 ENV DEBIAN_FRONTEND=noninteractive
-ENV LANG en_US.utf8
-ENV PGDATA /var/lib/postgresql/data
+ENV LANG=en_US.utf8
+ENV PGDATA=/var/lib/postgresql/data
 
 RUN mkdir /docker-entrypoint-initdb.d
 COPY init.sql /docker-entrypoint-initdb.d/init-db.sql

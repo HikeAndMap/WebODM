@@ -30,6 +30,9 @@ fi
 
 # Load default values
 source "${__dirname}/.env"
+
+# HikeAndMap: build as before (not through "bake"), without Compose's notice about it on every build
+export COMPOSE_BAKE=${COMPOSE_BAKE:-false}
 DEFAULT_PORT="$WO_PORT"
 DEFAULT_HOST="$WO_HOST"
 DEFAULT_MEDIA_DIR="$WO_MEDIA_DIR"
