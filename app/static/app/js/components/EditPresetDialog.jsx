@@ -185,6 +185,8 @@ const OPTION_GROUP_MAP = {
     // HikeAndMap/ODX [PATCH6]: the vertical accuracy of the photos without RTK
     'gps-accuracy-vertical': { group: 'sfm', subgroup: 'gps' },
     'gps-z-offset': { group: 'sfm', subgroup: 'gps' },
+    // HikeAndMap/ODX [PATCH6]: a height offset for the RTK photos only
+    'rtk-z-offset': { group: 'sfm', subgroup: 'gps' },
     'use-exif': { group: 'sfm', subgroup: 'gps' },
     
     // Dense
