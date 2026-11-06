@@ -1,5 +1,7 @@
 from app.plugins import PluginBase, Menu, MountPoint
 from django.shortcuts import render
+from django.http import JsonResponse
+from django.template.defaultfilters import filesizeformat
 from django.contrib.auth.decorators import login_required
 from django.utils.translation import gettext as _
 
@@ -120,6 +122,42 @@ def get_cpu_stats(interval=0.5):
         return {}
 
 
+def collect_stats():
+    """Disk, memory, swap and CPU figures, for the page and for its refresh (HikeAndMap)."""
+    # Disk space
+    total_disk_space, used_disk_space, free_disk_space = shutil.disk_usage('./')
+
+    stats = {
+        'total_disk_space': total_disk_space,
+        'used_disk_space': used_disk_space,
+        'free_disk_space': free_disk_space
+    }
+
+    # Memory
+    memory_stats = get_memory_stats()
+    if 'free' in memory_stats:
+        stats['free_memory'] = memory_stats['free']
+        stats['used_memory'] = memory_stats['used']
+        stats['total_memory'] = memory_stats['total']
+        # Swap (virtual memory on disk), and RAM + swap together: what a processing node can use at most
+        stats['swap_total'] = memory_stats.get('swap_total', 0)
+        stats['swap_free'] = memory_stats.get('swap_free', 0)
+        stats['swap_used'] = memory_stats.get('swap_used', 0)
+        stats['all_total'] = memory_stats['total'] + stats['swap_total']
+        stats['all_free'] = memory_stats['free'] + stats['swap_free']
+        stats['all_used'] = memory_stats['used'] + stats['swap_used']
+
+    # Processors (HikeAndMap)
+    cpu_stats = get_cpu_stats()
+    if 'cores' in cpu_stats:
+        stats['cpu'] = cpu_stats
+    return stats
+
+
+SIZE_KEYS = ('total_disk_space', 'used_disk_space', 'free_disk_space', 'free_memory', 'used_memory', 'total_memory',
+             'swap_total', 'swap_free', 'swap_used', 'all_total', 'all_free', 'all_used')
+
+
 class Plugin(PluginBase):
     def main_menu(self):
         return [Menu(_("Diagnostic"), self.public_url(""), "fa fa-chart-pie fa-fw")]
@@ -127,39 +165,21 @@ class Plugin(PluginBase):
     def app_mount_points(self):
         @login_required
         def diagnostic(request):
-            # Disk space
-            total_disk_space, used_disk_space, free_disk_space = shutil.disk_usage('./')
-
-            template_args = {
-                'title': 'Diagnostic',
-                'total_disk_space': total_disk_space,
-                'used_disk_space': used_disk_space,
-                'free_disk_space': free_disk_space
-            }
-
-            # Memory
-            memory_stats = get_memory_stats()
-            if 'free' in memory_stats:
-                template_args['free_memory'] = memory_stats['free']
-                template_args['used_memory'] = memory_stats['used']
-                template_args['total_memory'] = memory_stats['total']
-                # Swap (virtual memory on disk), and RAM + swap together: what a processing node can use at most
-                template_args['swap_total'] = memory_stats.get('swap_total', 0)
-                template_args['swap_free'] = memory_stats.get('swap_free', 0)
-                template_args['swap_used'] = memory_stats.get('swap_used', 0)
-                template_args['all_total'] = memory_stats['total'] + template_args['swap_total']
-                template_args['all_free'] = memory_stats['free'] + template_args['swap_free']
-                template_args['all_used'] = memory_stats['used'] + template_args['swap_used']
-
-            # Processors (HikeAndMap)
-            cpu_stats = get_cpu_stats()
-            if 'cores' in cpu_stats:
-                template_args['cpu'] = cpu_stats
-
+            template_args = collect_stats()
+            template_args['title'] = 'Diagnostic'
             return render(request, self.template_path("diagnostic.html"), template_args)
 
+        @login_required
+        def stats(request):
+            # HikeAndMap: the same figures as JSON, so that the page can refresh itself without reloading
+            data = collect_stats()
+            data['text'] = {k: filesizeformat(data[k]) for k in SIZE_KEYS if k in data}
+            data['time'] = time.strftime('%H:%M:%S')
+            return JsonResponse(data)
+
         return [
-            MountPoint('$', diagnostic)
+            MountPoint('$', diagnostic),
+            MountPoint('stats/$', stats)
         ]
 
 

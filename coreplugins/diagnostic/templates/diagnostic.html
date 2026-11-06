@@ -5,15 +5,22 @@
 <script src="./Chart.min.js"></script>
 <h2>{% trans 'Diagnostic Information' %}</h2>
 
+<p style="margin-bottom: 16px;">
+    <label style="font-weight: normal; cursor: pointer;">
+        <input type="checkbox" id="autoRefresh" checked style="margin-right: 6px;">{% trans 'Refresh every 10 seconds' %}
+    </label>
+    <span id="refreshState" style="margin-left: 12px; opacity: 0.7; font-size: 90%;"></span>
+</p>
+
 <div class="row text-center">
     <div class="col-md-3 col-sm-12">
         <h4>{% trans 'Storage Space' %}</h4>
         <div style="width: 80%; margin-left: 10%;">
             <canvas id="diskChart" width="200" height="200" style="margin-bottom: 12px;"></canvas>
         </div>
-        <p><b>{% trans 'Free' context 'Megabytes of storage space' %}:</b> {{ free_disk_space|filesizeformat }} |
-            <b>{% trans 'Used' context 'Megabytes of storage space' %}:</b> {{ used_disk_space|filesizeformat }} |
-            <b>{% trans 'Total' context 'Megabytes of storage space' %}:</b> {{ total_disk_space|filesizeformat }}</p>
+        <p><b>{% trans 'Free' context 'Megabytes of storage space' %}:</b> <span data-k="free_disk_space">{{ free_disk_space|filesizeformat }}</span> |
+            <b>{% trans 'Used' context 'Megabytes of storage space' %}:</b> <span data-k="used_disk_space">{{ used_disk_space|filesizeformat }}</span> |
+            <b>{% trans 'Total' context 'Megabytes of storage space' %}:</b> <span data-k="total_disk_space">{{ total_disk_space|filesizeformat }}</span></p>
     </div>
     <div class="col-md-3 col-sm-12">
         {% if total_memory %}
@@ -21,9 +28,9 @@
         <div style="width: 80%; margin-left: 10%;">
             <canvas id="memoryChart" width="200" height="200" style="margin-bottom: 12px;"></canvas>
         </div>
-        <p><b>{% trans 'Free' context 'Megabytes of memory space' %}:</b> {{ free_memory|filesizeformat }} |
-            <b>{% trans 'Used' context 'Megabytes of memory space' %}:</b> {{ used_memory|filesizeformat }} |
-            <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> {{ total_memory|filesizeformat }}</p>
+        <p><b>{% trans 'Free' context 'Megabytes of memory space' %}:</b> <span data-k="free_memory">{{ free_memory|filesizeformat }}</span> |
+            <b>{% trans 'Used' context 'Megabytes of memory space' %}:</b> <span data-k="used_memory">{{ used_memory|filesizeformat }}</span> |
+            <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> <span data-k="total_memory">{{ total_memory|filesizeformat }}</span></p>
         {% endif %}
     </div>
     <div class="col-md-3 col-sm-12">
@@ -33,9 +40,9 @@
         <div style="width: 80%; margin-left: 10%;">
             <canvas id="swapChart" width="200" height="200" style="margin-bottom: 12px;"></canvas>
         </div>
-        <p><b>{% trans 'Free' context 'Megabytes of memory space' %}:</b> {{ swap_free|filesizeformat }} |
-            <b>{% trans 'Used' context 'Megabytes of memory space' %}:</b> {{ swap_used|filesizeformat }} |
-            <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> {{ swap_total|filesizeformat }}</p>
+        <p><b>{% trans 'Free' context 'Megabytes of memory space' %}:</b> <span data-k="swap_free">{{ swap_free|filesizeformat }}</span> |
+            <b>{% trans 'Used' context 'Megabytes of memory space' %}:</b> <span data-k="swap_used">{{ swap_used|filesizeformat }}</span> |
+            <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> <span data-k="swap_total">{{ swap_total|filesizeformat }}</span></p>
         {% else %}
         <p style="margin-top: 40px;">{% trans 'No swap: a processing node can use the RAM only.' %}</p>
         {% endif %}
@@ -47,11 +54,11 @@
         <div style="width: 80%; margin-left: 10%;">
             <canvas id="cpuChart" width="200" height="200" style="margin-bottom: 12px;"></canvas>
         </div>
-        <p><b>{% trans 'Busy' %}:</b> {{ cpu.busy_cores }} {% trans 'of' %} {{ cpu.cores }} {% trans 'cores' %} ({{ cpu.busy_percent }} % {% trans 'of' %} {{ cpu.all_percent }} %) |
-            <b>{% trans 'Waiting for the disk' %}:</b> {{ cpu.iowait_cores }} |
-            <b>{% trans 'Idle' %}:</b> {{ cpu.idle_cores }}</p>
-        {% if cpu.load %}<p><b>{% trans 'Load average' %}:</b> {{ cpu.load.0 }} (1 min) | {{ cpu.load.1 }} (5 min) | {{ cpu.load.2 }} (15 min)</p>{% endif %}
-        <p style="font-size: 90%; opacity: 0.8;">{% trans 'Measured over half a second when the page was opened; reload the page for a new reading.' %}</p>
+        <p><b>{% trans 'Busy' %}:</b> <span data-c="busy_cores">{{ cpu.busy_cores }}</span> {% trans 'of' %} <span data-c="cores">{{ cpu.cores }}</span> {% trans 'cores' %} (<span data-c="busy_percent">{{ cpu.busy_percent }}</span> % {% trans 'of' %} <span data-c="all_percent">{{ cpu.all_percent }}</span> %) |
+            <b>{% trans 'Waiting for the disk' %}:</b> <span data-c="iowait_cores">{{ cpu.iowait_cores }}</span> |
+            <b>{% trans 'Idle' %}:</b> <span data-c="idle_cores">{{ cpu.idle_cores }}</span></p>
+        {% if cpu.load %}<p><b>{% trans 'Load average' %}:</b> <span data-l="0">{{ cpu.load.0 }}</span> (1 min) | <span data-l="1">{{ cpu.load.1 }}</span> (5 min) | <span data-l="2">{{ cpu.load.2 }}</span> (15 min)</p>{% endif %}
+        <p style="font-size: 90%; opacity: 0.8;">{% trans 'Measured over half a second at every reading.' %}</p>
         {% endif %}
     </div>
 </div>
@@ -60,9 +67,9 @@
 <div class="row text-center">
     <div class="col-sm-12">
         <p style="margin-top: 8px;"><b>{% trans 'Memory and swap together' %}:</b>
-            <b>{% trans 'Free' context 'Megabytes of memory space' %}:</b> {{ all_free|filesizeformat }} |
-            <b>{% trans 'Used' context 'Megabytes of memory space' %}:</b> {{ all_used|filesizeformat }} |
-            <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> {{ all_total|filesizeformat }}</p>
+            <b>{% trans 'Free' context 'Megabytes of memory space' %}:</b> <span data-k="all_free">{{ all_free|filesizeformat }}</span> |
+            <b>{% trans 'Used' context 'Megabytes of memory space' %}:</b> <span data-k="all_used">{{ all_used|filesizeformat }}</span> |
+            <b>{% trans 'Total' context 'Megabytes of memory space'%}:</b> <span data-k="all_total">{{ all_total|filesizeformat }}</span></p>
     </div>
 </div>
 {% endif %}
@@ -73,147 +80,100 @@
 
 <script>
 (function(){
-    var ctx = document.getElementById('diskChart').getContext('2d');
-    var labels = {
-        "{% trans 'Used' context 'Megabytes of storage space' %}": '{{ used_disk_space|filesizeformat }}',
-        "{% trans 'Free' context 'Megabytes of storage space' %}": '{{ free_disk_space|filesizeformat }}'
-    };
-    var chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ["{% trans 'Used' context 'Megabytes of storage space' %}", "{% trans 'Free' context 'Megabytes of storage space' %}"],
-            datasets: [{
-                label: "{% trans 'Disk Space' %}",
-                backgroundColor:[
-                    "rgb(255, 99, 132)",
-                    "rgb(54, 162, 235)"
-                ],
-                data: [ {{ used_disk_space }}, {{ free_disk_space }} ],
-            }]
-        },
-        options: {
-            legend:{
-                reverse: true
-            },
-            tooltips: {
-                callbacks: {
-                    label: function(tooltipItem, data) {
-                        return labels[data.labels[tooltipItem.index]];
-                    }
-                }
-            }
-        }
-    });
-})();
+    var USED_S = "{% trans 'Used' context 'Megabytes of storage space' %}", FREE_S = "{% trans 'Free' context 'Megabytes of storage space' %}";
+    var USED_M = "{% trans 'Used' context 'Megabytes of memory space' %}", FREE_M = "{% trans 'Free' context 'Megabytes of memory space' %}";
+    var BUSY = "{% trans 'Busy' %}", WAIT = "{% trans 'Waiting for the disk' %}", IDLE = "{% trans 'Idle' %}", CORES = "{% trans 'cores' %}";
+    var charts = {};
 
-{% if total_memory %}
-(function(){
-    var ctx = document.getElementById('memoryChart').getContext('2d');
-    var labels = {
-        "{% trans 'Used' context 'Megabytes of memory space' %}": '{{ used_memory|filesizeformat }}',
-        "{% trans 'Free' context 'Megabytes of memory space' %}": '{{ free_memory|filesizeformat }}'
-    };
-    var chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ["{% trans 'Used' context 'Megabytes of memory space' %}", "{% trans 'Free' context 'Megabytes of memory space' %}"],
-            datasets: [{
-                label: "{% trans 'Disk Space' %}",
-                backgroundColor:[
-                    "rgb(255, 99, 132)",
-                    "rgb(54, 162, 235)"
-                ],
-                data: [ {{ used_memory }}, {{ free_memory }} ],
-            }]
-        },
-        options: {
-            legend:{
-                reverse: true
-            },
-            tooltips: {
-                callbacks: {
-                    label: function(tooltipItem, data) {
-                        return labels[data.labels[tooltipItem.index]];
-                    }
-                }
+    // A doughnut chart whose tooltip texts can be changed later (charts[id].texts)
+    function doughnut(id, title, labels, colors, data, texts){
+        var canvas = document.getElementById(id);
+        if (!canvas) return;
+        var entry = {texts: texts};
+        entry.chart = new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {labels: labels, datasets: [{label: title, backgroundColor: colors, data: data}]},
+            options: {
+                legend: {reverse: true},
+                animation: {duration: 300},
+                tooltips: {callbacks: {label: function(item, d){ return entry.texts[item.index]; }}}
             }
-        }
-    });
-})();
-{% endif %}
+        });
+        charts[id] = entry;
+    }
 
-{% if cpu %}
-(function(){
-    var ctx = document.getElementById('cpuChart').getContext('2d');
-    var labels = {
-        "{% trans 'Busy' %}": '{{ cpu.busy_cores }} {% trans "cores" %}',
-        "{% trans 'Waiting for the disk' %}": '{{ cpu.iowait_cores }} {% trans "cores" %}',
-        "{% trans 'Idle' %}": '{{ cpu.idle_cores }} {% trans "cores" %}'
-    };
-    var chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ["{% trans 'Busy' %}", "{% trans 'Waiting for the disk' %}", "{% trans 'Idle' %}"],
-            datasets: [{
-                label: "{% trans 'CPU' %}",
-                backgroundColor:[
-                    "rgb(255, 99, 132)",
-                    "rgb(255, 159, 64)",
-                    "rgb(54, 162, 235)"
-                ],
-                data: [ {{ cpu.busy_cores }}, {{ cpu.iowait_cores }}, {{ cpu.idle_cores }} ],
-            }]
-        },
-        options: {
-            legend:{
-                reverse: true
-            },
-            tooltips: {
-                callbacks: {
-                    label: function(tooltipItem, data) {
-                        return labels[data.labels[tooltipItem.index]];
-                    }
-                }
-            }
-        }
-    });
-})();
-{% endif %}
+    function update(id, data, texts){
+        var entry = charts[id];
+        if (!entry) return;
+        entry.chart.data.datasets[0].data = data;
+        entry.texts = texts;
+        entry.chart.update();
+    }
 
-{% if swap_total %}
-(function(){
-    var ctx = document.getElementById('swapChart').getContext('2d');
-    var labels = {
-        "{% trans 'Used' context 'Megabytes of memory space' %}": '{{ swap_used|filesizeformat }}',
-        "{% trans 'Free' context 'Megabytes of memory space' %}": '{{ swap_free|filesizeformat }}'
-    };
-    var chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ["{% trans 'Used' context 'Megabytes of memory space' %}", "{% trans 'Free' context 'Megabytes of memory space' %}"],
-            datasets: [{
-                label: "{% trans 'Swap (virtual memory)' %}",
-                backgroundColor:[
-                    "rgb(255, 99, 132)",
-                    "rgb(54, 162, 235)"
-                ],
-                data: [ {{ swap_used }}, {{ swap_free }} ],
-            }]
-        },
-        options: {
-            legend:{
-                reverse: true
-            },
-            tooltips: {
-                callbacks: {
-                    label: function(tooltipItem, data) {
-                        return labels[data.labels[tooltipItem.index]];
-                    }
-                }
-            }
+    var twoColors = ["rgb(255, 99, 132)", "rgb(54, 162, 235)"];
+    doughnut('diskChart', "{% trans 'Disk Space' %}", [USED_S, FREE_S], twoColors,
+             [{{ used_disk_space }}, {{ free_disk_space }}], ['{{ used_disk_space|filesizeformat }}', '{{ free_disk_space|filesizeformat }}']);
+    {% if total_memory %}
+    doughnut('memoryChart', "{% trans 'Memory' context 'Computer memory (RAM)' %}", [USED_M, FREE_M], twoColors,
+             [{{ used_memory }}, {{ free_memory }}], ['{{ used_memory|filesizeformat }}', '{{ free_memory|filesizeformat }}']);
+    {% endif %}
+    {% if swap_total %}
+    doughnut('swapChart', "{% trans 'Swap (virtual memory)' %}", [USED_M, FREE_M], twoColors,
+             [{{ swap_used }}, {{ swap_free }}], ['{{ swap_used|filesizeformat }}', '{{ swap_free|filesizeformat }}']);
+    {% endif %}
+    {% if cpu %}
+    doughnut('cpuChart', "{% trans 'CPU' %}", [BUSY, WAIT, IDLE], ["rgb(255, 99, 132)", "rgb(255, 159, 64)", "rgb(54, 162, 235)"],
+             [{{ cpu.busy_cores }}, {{ cpu.iowait_cores }}, {{ cpu.idle_cores }}],
+             ['{{ cpu.busy_cores }} ' + CORES, '{{ cpu.iowait_cores }} ' + CORES, '{{ cpu.idle_cores }} ' + CORES]);
+    {% endif %}
+
+    // HikeAndMap: refresh the figures every 10 seconds without reloading the page (the checkbox switches it off; the
+    // choice is remembered in this browser)
+    var box = document.getElementById('autoRefresh');
+    var state = document.getElementById('refreshState');
+    var busy = false;
+
+    function setText(sel, attr, values){
+        var els = document.querySelectorAll('[' + attr + ']');
+        for (var i = 0; i < els.length; i++){
+            var key = els[i].getAttribute(attr);
+            if (values[key] !== undefined) els[i].textContent = values[key];
         }
+    }
+
+    function refresh(){
+        if (busy || !box.checked) return;
+        busy = true;
+        fetch('./stats/', {credentials: 'same-origin', cache: 'no-store'}).then(function(r){
+            if (!r.ok) throw new Error(r.status);
+            return r.json();
+        }).then(function(d){
+            setText(null, 'data-k', d.text || {});
+            update('diskChart', [d.used_disk_space, d.free_disk_space], [d.text.used_disk_space, d.text.free_disk_space]);
+            if (d.total_memory){
+                update('memoryChart', [d.used_memory, d.free_memory], [d.text.used_memory, d.text.free_memory]);
+                if (d.swap_total) update('swapChart', [d.swap_used, d.swap_free], [d.text.swap_used, d.text.swap_free]);
+            }
+            if (d.cpu){
+                setText(null, 'data-c', d.cpu);
+                if (d.cpu.load) setText(null, 'data-l', d.cpu.load);
+                update('cpuChart', [d.cpu.busy_cores, d.cpu.iowait_cores, d.cpu.idle_cores],
+                       [d.cpu.busy_cores + ' ' + CORES, d.cpu.iowait_cores + ' ' + CORES, d.cpu.idle_cores + ' ' + CORES]);
+            }
+            state.textContent = "{% trans 'Last reading' %}: " + d.time;
+        }).catch(function(e){
+            state.textContent = "{% trans 'Could not read the figures' %} (" + e.message + ")";
+        }).then(function(){ busy = false; });
+    }
+
+    try { if (window.localStorage.getItem('diagnosticAutoRefresh') === 'off') box.checked = false; } catch (e) {}
+    box.addEventListener('change', function(){
+        try { window.localStorage.setItem('diagnosticAutoRefresh', box.checked ? 'on' : 'off'); } catch (e) {}
+        state.textContent = box.checked ? '' : "{% trans 'Not refreshing' %}";
+        if (box.checked) refresh();
     });
+    if (!box.checked) state.textContent = "{% trans 'Not refreshing' %}";
+    setInterval(refresh, 10000);
 })();
-{% endif %}
 </script>
 {% endblock %}
