@@ -74,6 +74,13 @@
 </div>
 {% endif %}
 
+<div class="row">
+    <div class="col-sm-12" style="margin-top: 18px;">
+        <h4 class="text-center">{% trans 'Running tasks' %}</h4>
+        <div id="runningTasks" style="max-width: 900px; margin: 0 auto;"></div>
+    </div>
+</div>
+
 <hr/>
 
 <div style="margin-top: 20px;"><strong>{% trans 'Note!' %}</strong> {% blocktrans with win_hyperv_link="<a href='https://docs.docker.com/desktop/settings/windows/#resources'>Windows (Hyper-V)</a>" win_wsl2_link="<a href='https://learn.microsoft.com/en-us/windows/wsl/wsl-config#configuration-setting-for-wslconfig'>Windows (WSL2)</a>" mac_link="<a href='https://docs.docker.com/desktop/settings/mac/#resources'>MacOS</a>" %}These values might be relative to the virtualization environment in which the application is running, not necessarily the values of the your machine. See instructions for {{ win_hyperv_link }}, {{ win_wsl2_link }}, and {{ mac_link }} for changing these values in a Docker setup.{% endblocktrans %}</div>
@@ -127,6 +134,61 @@
              ['{{ cpu.busy_cores }} ' + CORES, '{{ cpu.iowait_cores }} ' + CORES, '{{ cpu.idle_cores }} ' + CORES]);
     {% endif %}
 
+    // HikeAndMap: the running tasks, with their current step and a rough estimate of the time left
+    var TXT = {
+        none: "{% trans 'No task is running.' %}",
+        photos: "{% trans 'photos' %}",
+        step: "{% trans 'Step' %}",
+        of: "{% trans 'of' %}",
+        unknown: "{% trans 'Step: not known yet' %}",
+        elapsed: "{% trans 'Elapsed' %}",
+        remaining: "{% trans 'Estimated remaining' %}",
+        about: "{% trans 'about' %}",
+        rough: "{% trans 'rough estimate' %}",
+        later: "{% trans 'after the first steps (feature extraction)' %}"
+    };
+
+    function dur(sec){
+        if (sec === null || sec === undefined) return '-';
+        sec = Math.round(sec);
+        var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+        if (h >= 24) return Math.floor(h / 24) + ' d ' + (h % 24) + ' h';
+        if (h > 0) return h + ' h ' + (m < 10 ? '0' : '') + m + ' min';
+        return m + ' min';
+    }
+
+    function esc(s){
+        var d = document.createElement('div');
+        d.textContent = (s === null || s === undefined) ? '' : String(s);
+        return d.innerHTML;
+    }
+
+    function renderTasks(tasks){
+        var el = document.getElementById('runningTasks');
+        if (!el) return;
+        if (!tasks || !tasks.length){
+            el.innerHTML = '<p class="text-center" style="opacity: 0.7;">' + esc(TXT.none) + '</p>';
+            return;
+        }
+        var html = '';
+        tasks.forEach(function(t){
+            var e = t.estimate;
+            var p = (e && e.percent !== null && e.percent !== undefined) ? Math.max(0, Math.min(100, e.percent)) : null;
+            html += '<div style="margin-bottom: 18px;">';
+            html += '<b>' + esc(t.name) + '</b> <span style="opacity: 0.7;">(' + esc(t.project) + (t.node ? ', ' + esc(t.node) : '') +
+                    ', ' + esc(t.photos) + ' ' + esc(TXT.photos) + ')</span><br/>';
+            html += e ? (esc(TXT.step) + ' ' + e.number + ' ' + esc(TXT.of) + ' ' + e.count + ': <b>' + esc(e.label) + '</b>') : esc(TXT.unknown);
+            html += '<div class="progress" style="margin: 6px 0 4px 0; height: 22px;"><div class="progress-bar progress-bar-success" role="progressbar" style="width: ' +
+                    (p === null ? 0 : p.toFixed(1)) + '%; min-width: 3em; line-height: 22px; background-color: #5cb85c;">' + (p === null ? '?' : p.toFixed(0) + ' %') + '</div></div>';
+            html += esc(TXT.elapsed) + ': ' + dur(t.elapsed) + ' | ' + esc(TXT.remaining) + ': ';
+            html += (e && e.remaining !== null && e.remaining !== undefined) ? (esc(TXT.about) + ' ' + dur(e.remaining) + ' (' + esc(TXT.rough) + ')') : esc(TXT.later);
+            html += '</div>';
+        });
+        el.innerHTML = html;
+    }
+
+    renderTasks(JSON.parse("{{ tasks_json|escapejs }}"));
+
     // HikeAndMap: refresh the figures every 10 seconds without reloading the page (the checkbox switches it off; the
     // choice is remembered in this browser)
     var box = document.getElementById('autoRefresh');
@@ -160,7 +222,9 @@
                 update('cpuChart', [d.cpu.busy_cores, d.cpu.iowait_cores, d.cpu.idle_cores],
                        [d.cpu.busy_cores + ' ' + CORES, d.cpu.iowait_cores + ' ' + CORES, d.cpu.idle_cores + ' ' + CORES]);
             }
-            state.textContent = "{% trans 'Last reading' %}: " + d.time;
+            renderTasks(d.tasks || []);
+            // the time of this computer (the server's clock runs in UTC)
+            state.textContent = "{% trans 'Last reading' %}: " + new Date().toLocaleTimeString();
         }).catch(function(e){
             state.textContent = "{% trans 'Could not read the figures' %} (" + e.message + ")";
         }).then(function(){ busy = false; });

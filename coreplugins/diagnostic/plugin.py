@@ -122,6 +122,39 @@ def get_cpu_stats(interval=0.5):
         return {}
 
 
+def running_tasks(user):
+    """HikeAndMap: the running tasks the user may see, with their current step and a rough estimate of the time left."""
+    try:
+        from guardian.shortcuts import get_objects_for_user
+        from app.models import Project, Task
+        from app.classes import step_times
+        from nodeodm import status_codes
+    except Exception:
+        return []
+    result = []
+    try:
+        projects = get_objects_for_user(user, 'app.view_project', Project, accept_global_perms=False)
+        tasks = Task.objects.filter(project__in=projects, status=status_codes.RUNNING).select_related('project', 'processing_node').order_by('created_at')
+        for t in tasks:
+            entry = {
+                'id': str(t.id),
+                'name': t.name or str(t.id),
+                'project': t.project.name,
+                'project_id': t.project.id,
+                'node': str(t.processing_node) if t.processing_node else '',
+                'photos': t.images_count,
+                'elapsed': t.processing_time / 1000.0 if t.processing_time and t.processing_time > 0 else None,
+            }
+            try:
+                entry['estimate'] = step_times.for_task(t)
+            except Exception:
+                entry['estimate'] = None
+            result.append(entry)
+    except Exception:
+        pass
+    return result
+
+
 def collect_stats():
     """Disk, memory, swap and CPU figures, for the page and for its refresh (HikeAndMap)."""
     # Disk space
@@ -167,12 +200,14 @@ class Plugin(PluginBase):
         def diagnostic(request):
             template_args = collect_stats()
             template_args['title'] = 'Diagnostic'
+            template_args['tasks_json'] = json.dumps(running_tasks(request.user))
             return render(request, self.template_path("diagnostic.html"), template_args)
 
         @login_required
         def stats(request):
             # HikeAndMap: the same figures as JSON, so that the page can refresh itself without reloading
             data = collect_stats()
+            data['tasks'] = running_tasks(request.user)
             data['text'] = {k: filesizeformat(data[k]) for k in SIZE_KEYS if k in data}
             data['time'] = time.strftime('%H:%M:%S')
             return JsonResponse(data)

@@ -58,6 +58,7 @@ from functools import partial
 import subprocess
 import glob
 from app.classes.console import Console
+from app.classes import step_times
 
 logger = logging.getLogger('app.logger')
 redis_client = redis.Redis.from_url(settings.CELERY_BROKER_URL)
@@ -854,6 +855,7 @@ class Task(models.Model):
                             self.upload_progress = 0
 
                         self.console.reset()
+                        step_times.reset(self)  # HikeAndMap: the step times start again with the restart
                         self.processing_time = -1
                         self.status = None
                         self.last_error = None
@@ -904,6 +906,11 @@ class Task(models.Model):
 
                     if len(info.output) > 0:
                         self.console += "\n".join(info.output) + '\n'
+                        # HikeAndMap: when each ODX step starts, for the estimate on the Diagnostic page
+                        try:
+                            step_times.record(self, info.output, info.processing_time)
+                        except Exception as e:
+                            logger.warning("Cannot record the step times of {}: {}".format(self, str(e)))
 
                     # Update running progress
                     self.running_progress = (info.progress / 100.0) * self.TASK_PROGRESS_LAST_VALUE
