@@ -451,7 +451,10 @@ DEPRECATION_WARNINGS = True
 
 # Whether to display onboarding instructions and 
 # automatically create a first project on first login
-DASHBOARD_ONBOARDING = True
+# HikeAndMap: off. WebODM creates a "First Project" on every visit to the dashboard while the user owns no project
+# (for instance when the projects belong to another account and are shared), so it kept coming back. WebODM's own tests
+# still run with it on.
+DASHBOARD_ONBOARDING = TESTING
 
 if TESTING or FLUSHING:
     CELERY_TASK_ALWAYS_EAGER = True
