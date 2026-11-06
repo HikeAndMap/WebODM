@@ -244,6 +244,10 @@ const OPTION_GROUP_MAP = {
     'use-3dmesh': { group: 'orthophoto', subgroup: 'ortho-opts' },
     // HikeAndMap/ODX [PATCH4]: the square round each GCP that the orthophoto takes from one photo the GCP is marked in
     'gcp-texture-size': { group: 'orthophoto', subgroup: 'ortho-opts' },
+    // HikeAndMap/ODX [PATCH7]: vehicles and people kept out of the orthophoto unless this is set
+    'orthophoto-keep-vehicles': { group: 'orthophoto', subgroup: 'ortho-opts' },
+    // HikeAndMap/ODX [PATCH8]: overhead wires kept out of the orthophoto unless this is set
+    'orthophoto-keep-wires': { group: 'orthophoto', subgroup: 'ortho-opts' },
     
     // Tile Exports
     '3d-tiles': { group: 'tiles', subgroup: 'tiles-opts' },
