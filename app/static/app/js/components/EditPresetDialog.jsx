@@ -248,7 +248,12 @@ const OPTION_GROUP_MAP = {
     'orthophoto-keep-vehicles': { group: 'orthophoto', subgroup: 'ortho-opts' },
     // HikeAndMap/ODX [PATCH8]: overhead wires kept out of the orthophoto unless this is set
     'orthophoto-keep-wires': { group: 'orthophoto', subgroup: 'ortho-opts' },
-    
+    // HikeAndMap/ODX [PATCH10]: with several surveys (months) the newest is shown; older GCP squares, the GCP photo score, the angle
+    'orthophoto-mix-surveys': { group: 'orthophoto', subgroup: 'ortho-opts' },
+    'survey-max-angle': { group: 'orthophoto', subgroup: 'ortho-opts' },
+    'gcp-texture-size-older': { group: 'orthophoto', subgroup: 'ortho-opts' },
+    'gcp-texture-min-score': { group: 'orthophoto', subgroup: 'ortho-opts' },
+
     // Tile Exports
     '3d-tiles': { group: 'tiles', subgroup: 'tiles-opts' },
     'tiles': { group: 'tiles', subgroup: 'tiles-opts' },
