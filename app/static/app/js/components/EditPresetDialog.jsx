@@ -192,6 +192,8 @@ const OPTION_GROUP_MAP = {
     // Dense
     'pc-quality': { group: 'mvs', subgroup: 'generation' },
     'pc-tile': { group: 'mvs', subgroup: 'generation' },
+    // HikeAndMap/ODX [PATCH16]: the dense point cloud made in pieces from the start from this many photos (0 = never)
+    'pc-tile-from-photos': { group: 'mvs', subgroup: 'generation' },
     
     'depthmap-min-consistent-views': { group: 'mvs', subgroup: 'generation' },
     
