@@ -80,13 +80,16 @@ def detect(lines):
 
 
 def record(task, lines, processing_time_ms):
-    """Called with each batch of new console lines: stores the start of every step seen for the first time."""
+    """Called with each batch of new console lines: stores the start of every step seen for the first time. Returns
+    [(step, previous step)] for the steps that began in these lines, in order; the previous step is the last one that had
+    begun before it (None for the first step of a run) - it has now finished. The Task Notification plugin mails about it."""
+    began = []
     if not lines or processing_time_ms is None or processing_time_ms < 0:
-        return
+        return began
     keys = detect(lines)
     first_time = not os.path.isfile(_path(task))
     if not keys and not first_time:
-        return
+        return began
     d = load(task)
     changed = first_time
     if first_time:
@@ -100,7 +103,10 @@ def record(task, lines, processing_time_ms):
             pass
     for k in keys:
         if k not in d['starts']:
+            before = [s for s in d['starts'] if _INDEX[s] < _INDEX[k]]
+            previous = max(before, key=lambda s: _INDEX[s]) if before else None
             d['starts'][k] = round(processing_time_ms / 1000.0, 1)
+            began.append((k, previous))
             changed = True
     if changed:
         try:
@@ -111,6 +117,7 @@ def record(task, lines, processing_time_ms):
             os.replace(tmp, _path(task))
         except Exception:
             pass
+    return began
 
 
 def _option(options, name):

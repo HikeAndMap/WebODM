@@ -1,0 +1,17 @@
+{
+	"name": "Task Notification",
+	"webodmMinVersion": "0.6.2",
+	"description": "Get notified when a task has finished processing, has been removed or has failed - and, optionally, after every step of the run - with a short summary of the times and the memory",
+	"version": "0.3.0",
+	"author": "Ronald W. Machado",
+	"email": "ronadlwilsonmachado@gmail.com",
+	"repository": "https://github.com/HikeAndMap/WebODM",
+	"tags": [
+		"notification",
+		"email",
+		"smtp"
+	],
+	"homepage": "https://github.com/HikeAndMap/WebODM",
+	"experimental": false,
+	"deprecated": false
+}

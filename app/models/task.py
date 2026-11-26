@@ -906,11 +906,20 @@ class Task(models.Model):
 
                     if len(info.output) > 0:
                         self.console += "\n".join(info.output) + '\n'
-                        # HikeAndMap: when each ODX step starts, for the estimate on the Diagnostic page
+                        # HikeAndMap: when each ODX step starts, for the estimate on the Diagnostic page, and for the plugins
+                        # (Task Notification can mail after every step); a plugin's error never stops the processing
+                        began = []
                         try:
-                            step_times.record(self, info.output, info.processing_time)
+                            began = step_times.record(self, info.output, info.processing_time)
                         except Exception as e:
                             logger.warning("Cannot record the step times of {}: {}".format(self, str(e)))
+                        if began:
+                            # the console file and step_times.json are already written; the processing time in the
+                            # database is that of the previous poll, a few seconds old
+                            from app.plugins import signals as plugin_signals
+                            for step, previous_step in began:
+                                plugin_signals.task_step_started.send_robust(sender=self.__class__, task_id=self.id,
+                                                                             step=step, previous_step=previous_step)
 
                     # Update running progress
                     self.running_progress = (info.progress / 100.0) * self.TASK_PROGRESS_LAST_VALUE
